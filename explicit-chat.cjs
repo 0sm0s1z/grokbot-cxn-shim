@@ -199,6 +199,10 @@ function createExplicitChat(options) {
         for (const row of rows) {
             if (row.kind === 'notice')
                 continue;
+            if (row.kind === 'send-message' && row.message && typeof row.message === 'object' && row.message.type === 'text' && typeof row.message.content === 'string') {
+                messages.push({ role: 'assistant', content: row.message.content });
+                continue;
+            }
             if (row.kind !== 'message' || (row.role !== 'user' && row.role !== 'assistant') || typeof row.content !== 'string')
                 throw Error('Router text mode cannot safely hydrate this transcript; use /router-off.');
             messages.push({ role: row.role, content: row.content });
