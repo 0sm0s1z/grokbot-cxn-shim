@@ -70,7 +70,7 @@ function createExplicitChat(options) {
     async function commandCore(method, args) {
         if (method !== 'sendPrompt' || !args.agentId || typeof args.prompt !== 'string' || !args.clientNonce)
             return;
-        const p = args.prompt.trim(), match = /^\/cxn-(list|model|status)(?:\s+(.*))?$/.exec(p);
+        const p = args.prompt.trim(), match = /^\/cxn-([^\s]*)(?:\s+([\s\S]*))?$/.exec(p);
         if (!match)
             return;
         const t = { agentId: args.agentId, sessionId: args.sessionId ?? '' };
@@ -81,11 +81,17 @@ function createExplicitChat(options) {
             return { accepted: true };
         if (prev)
             throw Error('command already processed');
+        const cmd = match[1], arg = match[2]?.trim() ?? '';
+        const help = 'Commands:\n/cxn-help — show this help\n/cxn-list — refresh available model IDs\n/cxn-model <exact-id> — select a model for this chat (example: /cxn-model provider/model)\n/cxn-status — show this chat’s route and model status\n/router-on — enable router text mode for this chat\n/router-off — return this chat to native mode\nModel choice and routing mode are per chat; selecting a model does not enable routing. Router mode is text-only and has no native tools. The legacy scratch chat remains on its existing route.';
+        if (cmd === 'help' || !['list', 'model', 'status'].includes(cmd)) {
+            notice(t, args.clientNonce, (cmd === 'help' ? '' : 'Unknown Constellation command.\n') + help);
+            options.journal.update(t, c => { c.operations[args.clientNonce] = 'complete'; });
+            return { accepted: true };
+        }
         const catalog = options.catalog;
         if (!catalog)
             throw Error('model catalog unavailable');
         let text = '';
-        const cmd = match[1], arg = match[2]?.trim() ?? '';
         if (cmd === 'list') {
             if (arg)
                 text = 'Usage: /cxn-list';

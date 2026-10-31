@@ -16,7 +16,15 @@ npm test
 
 Set `CXN_ROUTER_ORIGIN` to your HTTPS router origin. The default `https://router.example` is an intentionally nonfunctional example. Store your own router key as `CXN_API_KEY=...` in `~/.config/cxn.env`; do not commit that file. The prototype requests `GET /v1/models` and `POST /v1/chat/completions` from that origin. Redirects are rejected. Model IDs must match the router catalog exactly.
 
-The per-chat proposal supports `/router-on`, `/router-off`, `/cxn-list`, `/cxn-model <exact-id>` and `/cxn-status`. Model-list checks do not generate inference. Model and route choices are per conversation. A stale catalog is labeled, and model discovery failure retains the last successful list.
+The per-chat proposal supports these commands:
+
+- `/cxn-help` shows command help; unknown `/cxn-*` commands also show help locally.
+- `/cxn-list` refreshes the available model IDs.
+- `/cxn-model <exact-id>` selects a model for this chat, for example `/cxn-model provider/model`.
+- `/cxn-status` shows this chat’s routing mode, model, catalog check and recent inference status.
+- `/router-on` and `/router-off` select router text mode or native mode for this chat. The legacy scratch chat keeps its existing routing behavior.
+
+Model-list checks do not generate inference. Model and route choices are per conversation; selecting a model does not enable routing. A stale catalog is labeled, and model discovery failure retains the last successful list.
 
 ## Installer and rollback
 
