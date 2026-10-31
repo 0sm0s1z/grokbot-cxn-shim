@@ -27,6 +27,11 @@ export declare function createExplicitJournal(file: string): {
 };
 /** Accept formatting metadata only when it is provably the same plain text. */
 export declare function isPlainRichText(value: unknown, prompt: string): boolean;
+/** Hydrate visible text and explicitly skipped questions; reject other structured events. */
+export declare function visibleMessage(row: Row): {
+    role: 'user' | 'assistant';
+    content: string;
+} | undefined | null;
 export declare function createExplicitChat(options: {
     journal: ReturnType<typeof createExplicitJournal>;
     ready: (t: Target) => boolean;

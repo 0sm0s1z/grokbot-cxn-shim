@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createExplicitJournal = createExplicitJournal;
 exports.isPlainRichText = isPlainRichText;
+exports.visibleMessage = visibleMessage;
 exports.createExplicitChat = createExplicitChat;
 const cxn_ui_cjs_1 = require("./cxn-ui.cjs");
 const node_fs_1 = require("node:fs");
@@ -90,6 +91,24 @@ function isPlainRichText(value, prompt) {
         return false;
     }
 }
+/** Hydrate visible text and explicitly skipped questions; reject other structured events. */
+function visibleMessage(row) {
+    if (row.kind === 'notice' || row.localControl === true)
+        return undefined;
+    if (row.kind === 'message' && (row.role === 'user' || row.role === 'assistant') && typeof row.content === 'string')
+        return { role: row.role, content: row.content };
+    if (row.kind === 'send-message' && row.message && typeof row.message === 'object') {
+        const m = row.message;
+        if (m.type === 'text' && typeof m.content === 'string')
+            return { role: 'assistant', content: m.content };
+        if (m.type === 'widget' && row.widgetSkipped === true && m.widget && typeof m.widget === 'object') {
+            const w = m.widget;
+            if (typeof w.prompt === 'string' && Array.isArray(w.options) && w.options.every(x => x && typeof x === 'object' && typeof x.label === 'string'))
+                return { role: 'assistant', content: `${w.prompt}\nOptions: ${w.options.map(x => x.label).join('; ')}\n[Question dismissed without a selection.]` };
+        }
+    }
+    return null;
+}
 function createExplicitChat(options) {
     const snapshots = new Map(), busy = new Set();
     function migrateLegacy(t) { options.journal.update(t, c => { if (!c.legacyMigrated) {
@@ -155,7 +174,7 @@ function createExplicitChat(options) {
             }
         }
         else {
-            const d = catalog.read(), c = options.journal.get(t), r = c.recent, choice = (0, cxn_ui_cjs_1.modelChoices)(d.models).find(m => m.id === (c.model ?? 'gpt-6-luna')), active = c.mode === 'router', snapshot = snapshots.get(key(t)), supported = !!snapshot?.complete && options.journal.merge(t, snapshot.rows).every(row => row.kind === 'notice' || row.localControl === true || (row.kind === 'message' && (row.role === 'user' || row.role === 'assistant') && typeof row.content === 'string') || (row.kind === 'send-message' && row.message && typeof row.message === 'object' && row.message.type === 'text' && typeof row.message.content === 'string')), recent = r ? `${r.success ? 'Succeeded' : 'Failed'} ${(0, cxn_ui_cjs_1.prettyWhen)(r.checkedAt, options.now())} · ${(0, cxn_ui_cjs_1.prettyDuration)(r.durationMs)}${r.usage?.total_tokens !== undefined ? ` · ${r.usage.total_tokens} tokens` : ''}` : 'None yet';
+            const d = catalog.read(), c = options.journal.get(t), r = c.recent, choice = (0, cxn_ui_cjs_1.modelChoices)(d.models).find(m => m.id === (c.model ?? 'gpt-6-luna')), active = c.mode === 'router', snapshot = snapshots.get(key(t)), supported = !!snapshot?.complete && options.journal.merge(t, snapshot.rows).every(row => visibleMessage(row) !== null), recent = r ? `${r.success ? 'Succeeded' : 'Failed'} ${(0, cxn_ui_cjs_1.prettyWhen)(r.checkedAt, options.now())} · ${(0, cxn_ui_cjs_1.prettyDuration)(r.durationMs)}${r.usage?.total_tokens !== undefined ? ` · ${r.usage.total_tokens} tokens` : ''}` : 'None yet';
             text = `**Constellation status**\n\n- Mode: ${options.journal.getGlobalMode()}\n- This chat: ${active ? 'opted in' : 'not opted in'}\n- Route: ${active ? (supported ? 'Router for eligible text' : 'Router selected; history needs review') : 'Native'}\n- Model: ${choice?.label ?? c.model ?? 'gpt-6-luna'}\n- Last inference: ${recent}\n- Model list: ${d.availability === 'available' ? 'reachable' : d.availability === 'unavailable' ? 'refresh failed' : 'not checked'} · synced ${(0, cxn_ui_cjs_1.prettyWhen)(d.syncedAt, options.now())}${catalog.isStale(d) ? ' (stale)' : ''}\n\nRouter mode is text-only; use native mode for tools.`;
         }
         notice(t, args.clientNonce, text, args.prompt);
@@ -216,17 +235,13 @@ function createExplicitChat(options) {
         }
         const rows = options.journal.merge(t, snap.rows), messages = [];
         for (const row of rows) {
-            if (row.kind === 'notice' || row.localControl === true)
-                continue;
-            if (row.kind === 'send-message' && row.message && typeof row.message === 'object' && row.message.type === 'text' && typeof row.message.content === 'string') {
-                messages.push({ role: 'assistant', content: row.message.content });
-                continue;
-            }
-            if (row.kind !== 'message' || (row.role !== 'user' && row.role !== 'assistant') || typeof row.content !== 'string') {
+            const message = visibleMessage(row);
+            if (message === null) {
                 notice(t, args.clientNonce, 'This chat contains content router text mode cannot use safely. Use `/router-off` for native mode, or start a text-only chat.', args.prompt);
                 return { accepted: true };
             }
-            messages.push({ role: row.role, content: row.content });
+            if (message)
+                messages.push(message);
         }
         const selected = options.journal.get(t).model;
         if (selected && options.catalog && !options.catalog.read().models.some(m => m.id === selected)) {
