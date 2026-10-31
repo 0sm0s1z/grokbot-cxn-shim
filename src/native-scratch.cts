@@ -50,7 +50,7 @@ export function createLabScratchRouter(options:{
   readonly ready:(args:{agentId:string;sessionId:string})=>boolean;
   readonly emit:(args:{agentId:string;sessionId:string},entries:readonly Record<string,unknown>[])=>boolean;
   readonly complete:(messages:readonly {role:'user'|'assistant';content:string}[],signal:AbortSignal,target?:{agentId:string;sessionId:string})=>Promise<string>;
-  readonly makeId:()=>string; readonly now:()=>number;
+  readonly makeId:()=>string; readonly now:()=>number; readonly legacyCommandsOnly?:boolean;
   readonly store?:{read:()=>{target:{agentId:string;sessionId:string};turns:{nonce:string;modelPrompt:string;answer:string;synthetic:boolean}[]}|undefined;
     append:(target:{agentId:string;sessionId:string},turn:{nonce:string;prompt:string;modelPrompt:string;answer:string;at:number;synthetic:boolean})=>void};
 }) {
@@ -63,7 +63,7 @@ export function createLabScratchRouter(options:{
     if(method!=='sendPrompt'||typeof args.prompt!=='string')return;
     const synthetic=args.prompt.startsWith('/shim-synthetic '),explicitRouter=args.prompt.startsWith('/shim-router ');
     const isSelected=selected!==undefined&&args.agentId===selected.agentId&&(args.sessionId??'')===selected.sessionId;
-    if(!synthetic&&!explicitRouter&&!isSelected)return;
+    if(!synthetic&&!explicitRouter&&(!isSelected||options.legacyCommandsOnly))return;
     if(busy)throw Error('scratch turn already in progress');busy=true;
     try {
     if(!args.agentId||!args.clientNonce||args.attachmentPaths?.length)throw Error('scratch requires a text-only conversation');

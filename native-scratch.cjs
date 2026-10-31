@@ -54,7 +54,7 @@ function createLabScratchRouter(options) {
             return;
         const synthetic = args.prompt.startsWith('/shim-synthetic '), explicitRouter = args.prompt.startsWith('/shim-router ');
         const isSelected = selected !== undefined && args.agentId === selected.agentId && (args.sessionId ?? '') === selected.sessionId;
-        if (!synthetic && !explicitRouter && !isSelected)
+        if (!synthetic && !explicitRouter && (!isSelected || options.legacyCommandsOnly))
             return;
         if (busy)
             throw Error('scratch turn already in progress');

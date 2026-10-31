@@ -47,6 +47,7 @@ export declare function createLabScratchRouter(options: {
     }) => Promise<string>;
     readonly makeId: () => string;
     readonly now: () => number;
+    readonly legacyCommandsOnly?: boolean;
     readonly store?: {
         read: () => {
             target: {

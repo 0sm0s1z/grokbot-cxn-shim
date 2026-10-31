@@ -25,6 +25,7 @@
     "src/scratch-store.cts",
     "src/global-policy.cts",
     "src/explicit-chat.cts",
-    "src/cxn-catalog.cts"
+    "src/cxn-catalog.cts",
+    "src/cxn-ui.cts"
   ]
 }

@@ -5,6 +5,7 @@ type Target = {
 };
 type Row = Record<string, unknown>;
 type Saved = {
+    legacyMigrated?: boolean;
     mode: 'native' | 'router';
     rows: Row[];
     operations: Record<string, 'started' | 'complete' | 'failed' | 'native'>;
@@ -30,6 +31,7 @@ export declare function createExplicitChat(options: {
     journal: ReturnType<typeof createExplicitJournal>;
     ready: (t: Target) => boolean;
     emit: (t: Target, r: readonly Row[]) => boolean;
+    update?: (t: Target, r: Row) => boolean;
     complete: (m: readonly {
         role: 'user' | 'assistant';
         content: string;
@@ -61,6 +63,7 @@ export declare function createExplicitChat(options: {
     }) => Promise<{
         accepted: true;
     } | undefined>;
+    migrateLegacy: (t: Target) => void;
     invalidate(t: Target): void;
 };
 export {};

@@ -2,7 +2,7 @@
 
 Experimental TypeScript code for selectively routing text from a locally copied Grok Bot 0.78.1 app to an OpenAI-compatible Constellation router. This is a research prototype: the per-chat extension has offline tests but has not been deployed or verified in a live app. The original app, its source, bundles and user data are not included.
 
-The router text path is not the native tool loop. It lacks native tools, hidden system instructions, attachments and streaming. Visible history may contain unsupported rows or be incomplete; the adapter refuses those cases. Locally saved routed turns are not committed to the native service and native mode may not see them. Its journal stores conversation text in plaintext in the local data directory. Use only with an account and router you control.
+Router text replies are buffered, not streamed; live cancellation and rendering are not yet verified. The router text path is not the native tool loop. It lacks native tools, hidden system instructions, attachments and streaming. Visible history may contain unsupported rows or be incomplete; the adapter refuses those cases. Locally saved routed turns are not committed to the native service and native mode may not see them. Its journal stores conversation text in plaintext in the local data directory. Use only with an account and router you control.
 
 ## Build and test
 
@@ -14,13 +14,13 @@ npm run build
 npm test
 ```
 
-Set `CXN_ROUTER_ORIGIN` to your HTTPS router origin. The default `https://router.example` is an intentionally nonfunctional example. Store your own router key as `CXN_API_KEY=...` in `~/.config/cxn.env`; do not commit that file. The prototype requests `GET /v1/models` and `POST /v1/chat/completions` from that origin. Redirects are rejected. Model IDs must match the router catalog exactly.
+Set `CXN_ROUTER_ORIGIN` to your HTTPS router origin. The default `https://router.example` is an intentionally nonfunctional example. Store your own router key as `CXN_API_KEY=...` in `~/.config/cxn.env`; do not commit that file. The prototype requests `GET /v1/models` and `POST /v1/chat/completions` from that origin. Redirects are rejected. Model names and stable aliases map to exact router catalog IDs; ambiguous names must be disambiguated.
 
 The per-chat proposal supports these commands:
 
 - `/cxn-help` shows command help; unknown `/cxn-*` commands also show help locally.
 - `/cxn-list` refreshes the available model IDs.
-- `/cxn-model <exact-id>` selects a model for this chat, for example `/cxn-model provider/model`.
+- `/cxn-model <name or alias>` selects a model for this chat. Use `/cxn-list` for names and unambiguous aliases.
 - `/cxn-status` shows global mode, chat opt-in, effective route, model, catalog check and recent inference status.
 - `/cxn-mode selective` persists the opt-in routing mode; untouched chats stay native.
 - `/router-on` and `/router-off` select router text mode or native mode for this chat. The legacy scratch chat keeps its existing routing behavior.
