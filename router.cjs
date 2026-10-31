@@ -10,7 +10,7 @@ async function completeScratch(messages, signal, model = 'gpt-6-luna', report) {
         const response = await fetch(`${cxn_catalog_cjs_1.ORIGIN}/v1/chat/completions`, {
             method: 'POST', redirect: 'error', signal: AbortSignal.any([signal, AbortSignal.timeout(45000)]),
             headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-            body: JSON.stringify({ model, messages: [{ role: 'system', content: 'You are a text-only assistant in a local test conversation. The configured model identifier is gpt-6-luna, accessed through Constellation Router; report that identifier if asked and do not claim to verify details beyond this configuration. You have no tools or access to external systems. Do not claim to have performed actions you cannot perform.' }, ...messages], max_tokens: 256 }),
+            body: JSON.stringify({ model, messages: [{ role: 'system', content: `You are a text-only assistant in a local test conversation. The configured model identifier is ${model}, accessed through Constellation Router; report that identifier if asked and do not claim to verify details beyond this configuration. You have no tools or access to external systems. Do not claim to have performed actions you cannot perform.` }, ...messages], max_tokens: 256 }),
         });
         if (!response.ok)
             throw new Error(`router HTTP ${response.status}`);
