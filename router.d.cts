@@ -1,4 +1,5 @@
-/** Only the isolated, explicitly selected scratch route calls this function. */
+export declare function classifyRouterError(e: unknown, signal: AbortSignal): string;
+/** Router completions contain only the supplied conversation context. */
 export declare function completeScratch(messages: readonly {
     role: 'user' | 'assistant';
     content: string;
@@ -6,5 +7,6 @@ export declare function completeScratch(messages: readonly {
     success: boolean;
     checkedAt: number;
     durationMs: number;
+    failure?: string;
     usage?: Record<string, number>;
 }) => void): Promise<string>;

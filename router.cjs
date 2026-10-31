@@ -1,8 +1,21 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.classifyRouterError = classifyRouterError;
 exports.completeScratch = completeScratch;
 const cxn_catalog_cjs_1 = require("./cxn-catalog.cjs");
-/** Only the isolated, explicitly selected scratch route calls this function. */
+function classifyRouterError(e, signal) { if (signal.aborted)
+    return 'canceled'; if (e instanceof Error) {
+    const m = /^router HTTP ([1-5][0-9]{2})$/.exec(e.message);
+    if (m)
+        return `HTTP ${m[1]}`;
+    if (e.name === 'TimeoutError')
+        return 'timeout';
+    if (e.name === 'AbortError')
+        return 'canceled';
+    if (e instanceof TypeError)
+        return 'network error';
+} return 'error'; }
+/** Router completions contain only the supplied conversation context. */
 async function completeScratch(messages, signal, model = 'gpt-6-luna', report) {
     const start = Date.now();
     try {
@@ -28,7 +41,7 @@ async function completeScratch(messages, signal, model = 'gpt-6-luna', report) {
         return text;
     }
     catch (e) {
-        report?.({ success: false, checkedAt: Date.now(), durationMs: Date.now() - start });
+        report?.({ success: false, checkedAt: Date.now(), durationMs: Date.now() - start, failure: classifyRouterError(e, signal) });
         throw e;
     }
 }

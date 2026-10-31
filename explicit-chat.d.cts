@@ -14,6 +14,7 @@ type Saved = {
         success: boolean;
         checkedAt: number;
         durationMs: number;
+        failure?: string;
         usage?: Record<string, number>;
     };
 };

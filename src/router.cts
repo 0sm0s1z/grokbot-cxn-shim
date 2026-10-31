@@ -1,7 +1,9 @@
 import {keyFromFile,ORIGIN} from './cxn-catalog.cjs';
 
-/** Only the isolated, explicitly selected scratch route calls this function. */
-export async function completeScratch(messages: readonly {role:'user'|'assistant';content:string}[], signal: AbortSignal, model='gpt-6-luna', report?:(stats:{success:boolean;checkedAt:number;durationMs:number;usage?:Record<string,number>})=>void): Promise<string> {
+export function classifyRouterError(e:unknown,signal:AbortSignal):string {if(signal.aborted)return 'canceled';if(e instanceof Error){const m=/^router HTTP ([1-5][0-9]{2})$/.exec(e.message);if(m)return `HTTP ${m[1]}`;if(e.name==='TimeoutError')return 'timeout';if(e.name==='AbortError')return 'canceled';if(e instanceof TypeError)return 'network error'}return 'error'}
+
+/** Router completions contain only the supplied conversation context. */
+export async function completeScratch(messages: readonly {role:'user'|'assistant';content:string}[], signal: AbortSignal, model='gpt-6-luna', report?:(stats:{success:boolean;checkedAt:number;durationMs:number;failure?:string;usage?:Record<string,number>})=>void): Promise<string> {
   const start=Date.now();
   try { const key=keyFromFile();
   const response=await fetch(`${ORIGIN}/v1/chat/completions`, {
@@ -16,5 +18,5 @@ export async function completeScratch(messages: readonly {role:'user'|'assistant
   process.stderr.write('[grokbot-scratch] '+JSON.stringify({status:response.status,model:data.model??null,
     requestId:response.headers.get('x-request-id')??data.id??null,usage:data.usage??null})+'\n');
   const usage:Record<string,number>={};for(const k of ['prompt_tokens','completion_tokens','total_tokens'])if(typeof data.usage?.[k]==='number'&&Number.isFinite(data.usage[k]))usage[k]=data.usage[k];report?.({success:true,checkedAt:Date.now(),durationMs:Date.now()-start,...Object.keys(usage).length?{usage}:{}});return text;
-  } catch(e){report?.({success:false,checkedAt:Date.now(),durationMs:Date.now()-start});throw e}
+  } catch(e){report?.({success:false,checkedAt:Date.now(),durationMs:Date.now()-start,failure:classifyRouterError(e,signal)});throw e}
 }
