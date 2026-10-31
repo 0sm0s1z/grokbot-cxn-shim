@@ -1,0 +1,14 @@
+{
+  "appVersion": "0.78.1",
+  "bundleVersion": "0.78.1",
+  "bundleIdentifier": "com.anysphere.sand",
+  "archiveSha256": "e8d5e10f94f8b52cd02f696599c8e6503420ad85ceed7b41a27bbff7bff22f4d",
+  "archiveHeaderSha256": "e1bb9f649c188e7d5fc344fabdb60cf9a2bc5932352684b14f69b22529d2fd04",
+  "module": "dist/electron-main/main-app.cjs",
+  "moduleSha256": "9d77eb5049d50869f0a2e7ceb1552cce0450188fecc23c81ff385b35e7252514",
+  "moduleByteOffset": 360729,
+  "frameworkSha256": "8d437e5fddbebd84d64c14e25aade6a0c7887b2b103569eca21212770dc9b8d9",
+  "original": "function gOe(e){return e8t({baseUrl:e.backend.backendUrl,interceptors:[rOe(),mOe(e),X9t],httpVersion:e.httpVersion??\"1.1\"})}",
+  "proposed": "function gOe(e){return require(\"./grokbot-connect-shim/index.cjs\").wrapConnectTransport(e8t({baseUrl:e.backend.backendUrl,interceptors:[rOe(),mOe(e),X9t],httpVersion:e.httpVersion??\"1.1\"}))}",
+  "infoPlistSha256": "fa23e18f75925d0e9a981bc9820e5e980aed0afabf37cce12ed353663a547683"
+}

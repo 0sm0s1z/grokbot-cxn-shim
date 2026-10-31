@@ -1,0 +1,11 @@
+node_modules/
+*.tsbuildinfo
+*.cjs.next
+*.app/
+*.asar
+*.plist
+*.env
+lab/coordinator-*-proposal.cjs
+lab/data/
+
+node_modules

@@ -1,0 +1,19 @@
+{
+  "name": "grokbot-cxn-shim",
+  "version": "0.1.0",
+  "description": "Experimental local text routing shim for Grok Bot",
+  "main": "index.cjs",
+  "types": "index.d.cts",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "test": "node --test test/*.test.cjs"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "25.5.0"
+  },
+  "license": "MIT"
+}

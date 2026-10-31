@@ -1,0 +1,5 @@
+{
+  "routerOrigin": "https://router.example",
+  "model": "your-model-id",
+  "credentialFile": "~/.config/cxn.env"
+}

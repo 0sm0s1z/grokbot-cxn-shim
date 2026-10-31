@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "declaration": true,
+    "rootDir": "src",
+    "outDir": ".",
+    "types": [
+      "node"
+    ],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "skipLibCheck": true,
+    "composite": true
+  },
+  "files": [
+    "src/index.cts",
+    "src/scratch.cts",
+    "src/native-scratch.cts",
+    "src/router.cts",
+    "src/scratch-store.cts",
+    "src/global-policy.cts",
+    "src/explicit-chat.cts",
+    "src/cxn-catalog.cts"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@local/grokbot-connect-shim-installer",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/installer.cjs",
+  "bin": { "grokbot-shim": "dist/cli.cjs" },
+  "files": ["src", "dist", "baseline.json", "README.md"],
+  "engines": { "node": ">=20" }
+}
