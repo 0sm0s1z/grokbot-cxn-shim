@@ -110,7 +110,7 @@ function visibleMessage(row) {
     return null;
 }
 function createExplicitChat(options) {
-    const snapshots = new Map(), busy = new Set();
+    const snapshots = new Map(), busy = new Set(), activeRequests = new Map();
     function migrateLegacy(t) { options.journal.update(t, c => { if (!c.legacyMigrated) {
         if (c.mode === 'native')
             c.mode = 'router';
@@ -137,9 +137,16 @@ function createExplicitChat(options) {
         if (prev)
             throw Error('command already processed');
         const cmd = match[1], arg = match[2]?.trim() ?? '';
-        const help = '**Constellation commands**\n\n- `/cxn-list` — browse available models\n- `/cxn-model <name or alias>` — choose a model\n- `/cxn-status` — see this chat’s route\n- `/cxn-mode selective` — use per-chat opt-in\n- `/router-on` / `/router-off` — change this chat’s route\n- `/cxn-help` — show this help\n\nExample: `/cxn-model gpt-6-luna`\n\nRouter mode handles text only; native tools remain available in native mode.';
-        if (cmd === 'help' || !['list', 'model', 'status', 'mode'].includes(cmd)) {
+        const help = '**Constellation commands**\n\n- `/cxn-list` — browse available models\n- `/cxn-model <name or alias>` — choose a model\n- `/cxn-status` — see this chat’s route\n- `/cxn-cancel` — cancel this chat’s router request\n- `/cxn-mode selective` — use per-chat opt-in\n- `/router-on` / `/router-off` — change this chat’s route\n- `/cxn-help` — show this help\n\nExample: `/cxn-model gpt-6-luna`\n\nRouter mode handles text only; native tools remain available in native mode.';
+        if (cmd === 'help' || !['list', 'model', 'status', 'mode', 'cancel'].includes(cmd)) {
             notice(t, args.clientNonce, (cmd === 'help' ? '' : 'Unknown command.\n\n') + help, args.prompt);
+            return { accepted: true };
+        }
+        if (cmd === 'cancel') {
+            const active = activeRequests.get(key(t));
+            if (active)
+                active.abort();
+            notice(t, args.clientNonce, active ? 'Canceling this chat’s router request.' : 'No router request is active in this chat.', args.prompt);
             return { accepted: true };
         }
         if (cmd === 'mode') {
@@ -248,9 +255,11 @@ function createExplicitChat(options) {
             notice(t, args.clientNonce, 'The selected model is no longer in the model list. Use `/cxn-list` and select another model with `/cxn-model`.', args.prompt);
             return { accepted: true };
         }
-        const sig = signal ?? new AbortController().signal;
-        sig.throwIfAborted();
+        const parent = signal ?? new AbortController().signal;
+        parent.throwIfAborted();
+        const controller = new AbortController(), sig = AbortSignal.any([parent, controller.signal]);
         busy.add(k);
+        activeRequests.set(k, controller);
         const at = options.now(), user = { id: `route-user-${args.clientNonce}`, kind: 'message', role: 'user', content: args.prompt, clientNonce: args.clientNonce, timestampMs: at }, pending = { id: `route-assistant-${args.clientNonce}`, kind: 'message', role: 'assistant', content: 'Waiting for the router…', timestampMs: at, localControl: true };
         try {
             options.journal.update(t, c => { c.operations[args.clientNonce] = 'started'; c.rows.push(user, pending); });
@@ -259,6 +268,7 @@ function createExplicitChat(options) {
         }
         catch (e) {
             busy.delete(k);
+            activeRequests.delete(k);
             throw e;
         }
         void (async () => { try {
@@ -288,6 +298,7 @@ function createExplicitChat(options) {
         }
         finally {
             busy.delete(k);
+            activeRequests.delete(k);
         } })();
         return { accepted: true };
     }

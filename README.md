@@ -22,6 +22,7 @@ The per-chat proposal supports these commands:
 - `/cxn-list` refreshes the available model IDs.
 - `/cxn-model <name or alias>` selects a model for this chat. Use `/cxn-list` for names and unambiguous aliases.
 - `/cxn-status` shows global mode, chat opt-in, effective route, model, catalog check and recent inference status.
+- `/cxn-cancel` requests cancellation of this chat’s active router turn (live behavior is not yet verified).
 - `/cxn-mode selective` persists the opt-in routing mode; untouched chats stay native.
 - `/router-on` and `/router-off` select router text mode or native mode for this chat. The legacy scratch chat keeps its existing routing behavior.
 
