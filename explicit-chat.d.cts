@@ -18,6 +18,8 @@ type Saved = {
 };
 /** Local plaintext journal. A started operation is never retried automatically. */
 export declare function createExplicitJournal(file: string): {
+    getGlobalMode(): "selective";
+    setGlobalMode(): void;
     get(t: Target): Saved;
     update(t: Target, fn: (c: Saved) => void): void;
     merge(t: Target, rows: readonly Row[]): Row[];

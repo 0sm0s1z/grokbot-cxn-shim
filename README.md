@@ -21,7 +21,8 @@ The per-chat proposal supports these commands:
 - `/cxn-help` shows command help; unknown `/cxn-*` commands also show help locally.
 - `/cxn-list` refreshes the available model IDs.
 - `/cxn-model <exact-id>` selects a model for this chat, for example `/cxn-model provider/model`.
-- `/cxn-status` shows this chat’s routing mode, model, catalog check and recent inference status.
+- `/cxn-status` shows global mode, chat opt-in, effective route, model, catalog check and recent inference status.
+- `/cxn-mode selective` persists the opt-in routing mode; untouched chats stay native.
 - `/router-on` and `/router-off` select router text mode or native mode for this chat. The legacy scratch chat keeps its existing routing behavior.
 
 Model-list checks do not generate inference. Model and route choices are per conversation; selecting a model does not enable routing. A stale catalog is labeled, and model discovery failure retains the last successful list.

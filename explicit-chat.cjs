@@ -49,7 +49,7 @@ function createExplicitJournal(file) {
         }
     } }
     function chat(d, t) { return d.chats[key(t)] ??= ({ mode: 'native', rows: [], operations: {} }); }
-    return { get(t) { return chat(read(), t); }, update(t, fn) { const d = read(); fn(chat(d, t)); write(d); }, merge(t, rows) { const local = chat(read(), t).rows, seen = new Set(rows.map(r => r.id)); const all = [...rows]; let seq = rows.reduce((n, r) => typeof r.seq === 'number' && Number.isSafeInteger(r.seq) ? Math.max(n, r.seq) : n, 0); for (const r of local) {
+    return { getGlobalMode() { return read().globalMode ?? 'selective'; }, setGlobalMode() { const d = read(); d.globalMode = 'selective'; write(d); }, get(t) { return chat(read(), t); }, update(t, fn) { const d = read(); fn(chat(d, t)); write(d); }, merge(t, rows) { const local = chat(read(), t).rows, seen = new Set(rows.map(r => r.id)); const all = [...rows]; let seq = rows.reduce((n, r) => typeof r.seq === 'number' && Number.isSafeInteger(r.seq) ? Math.max(n, r.seq) : n, 0); for (const r of local) {
             if (seen.has(r.id))
                 continue;
             seen.add(r.id);
@@ -82,9 +82,15 @@ function createExplicitChat(options) {
         if (prev)
             throw Error('command already processed');
         const cmd = match[1], arg = match[2]?.trim() ?? '';
-        const help = 'Commands:\n/cxn-help — show this help\n/cxn-list — refresh available model IDs\n/cxn-model <exact-id> — select a model for this chat (example: /cxn-model provider/model)\n/cxn-status — show this chat’s route and model status\n/router-on — enable router text mode for this chat\n/router-off — return this chat to native mode\nModel choice and routing mode are per chat; selecting a model does not enable routing. Router mode is text-only and has no native tools. The legacy scratch chat remains on its existing route.';
-        if (cmd === 'help' || !['list', 'model', 'status'].includes(cmd)) {
+        const help = 'Commands:\n/cxn-help — show this help\n/cxn-list — refresh available model IDs\n/cxn-model <exact-id> — select a model for this chat (example: /cxn-model provider/model)\n/cxn-status — show global mode and this chat’s route and model status\n/cxn-mode selective — make routing opt-in per chat\n/router-on — enable router text mode for this chat\n/router-off — return this chat to native mode\nSelective mode routes only opted-in chats. Model choice and routing mode are per chat; selecting a model does not enable routing. Router mode is text-only and has no native tools. The legacy scratch chat remains on its existing route.';
+        if (cmd === 'help' || !['list', 'model', 'status', 'mode'].includes(cmd)) {
             notice(t, args.clientNonce, (cmd === 'help' ? '' : 'Unknown Constellation command.\n') + help);
+            options.journal.update(t, c => { c.operations[args.clientNonce] = 'complete'; });
+            return { accepted: true };
+        }
+        if (cmd === 'mode') {
+            const text = arg === 'selective' ? (options.journal.setGlobalMode(), 'Global mode: selective. Only opted-in chats route through Constellation. Routing choices are unchanged.') : 'Usage: /cxn-mode selective';
+            notice(t, args.clientNonce, text);
             options.journal.update(t, c => { c.operations[args.clientNonce] = 'complete'; });
             return { accepted: true };
         }
@@ -113,8 +119,8 @@ function createExplicitChat(options) {
         }
         else {
             const d = catalog.read(), c = options.journal.get(t), r = c.recent;
-            const mode = options.scratchTarget?.(t) ? 'on (scratch text mode)' : c.mode === 'router' ? 'on (text mode)' : 'off (native)';
-            text = `Router: ${mode}; model: ${c.model ?? 'gpt-6-luna'}; origin: ${cxn_catalog_cjs_1.ORIGIN}. Model list: ${d.availability}, checked ${d.checkedAt === null ? 'never' : new Date(d.checkedAt).toISOString()}, synced ${d.syncedAt === null ? 'never' : new Date(d.syncedAt).toISOString()}${catalog.isStale(d) ? ' (stale)' : ''}${d.error ? `; ${d.error}` : ''}. Recent inference: ${r ? `${r.success ? 'success' : 'failure'} at ${new Date(r.checkedAt).toISOString()}, ${r.durationMs} ms${r.usage ? `, tokens ${JSON.stringify(r.usage)}` : ''}` : 'none recorded'}. Router mode is text-only; native tools and hidden instructions are unavailable.`;
+            const isScratch = options.scratchTarget?.(t) ?? false, mode = isScratch ? 'on (scratch text mode)' : c.mode === 'router' ? 'on (text mode)' : 'off (native)';
+            text = `Global mode: ${options.journal.getGlobalMode()}; chat opt-in: ${c.mode === 'router' || isScratch ? 'on' : 'off'}${isScratch ? ' (legacy scratch)' : ''}; effective router: ${mode}; model: ${c.model ?? 'gpt-6-luna'}; origin: ${cxn_catalog_cjs_1.ORIGIN}. Model list: ${d.availability}, checked ${d.checkedAt === null ? 'never' : new Date(d.checkedAt).toISOString()}, synced ${d.syncedAt === null ? 'never' : new Date(d.syncedAt).toISOString()}${catalog.isStale(d) ? ' (stale)' : ''}${d.error ? `; ${d.error}` : ''}. Recent inference: ${r ? `${r.success ? 'success' : 'failure'} at ${new Date(r.checkedAt).toISOString()}, ${r.durationMs} ms${r.usage ? `, tokens ${JSON.stringify(r.usage)}` : ''}` : 'none recorded'}. Router mode is text-only; native tools and hidden instructions are unavailable.`;
         }
         notice(t, args.clientNonce, text);
         options.journal.update(t, c => { c.operations[args.clientNonce] = 'complete'; });
