@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createExplicitJournal = createExplicitJournal;
+exports.isPlainRichText = isPlainRichText;
 exports.createExplicitChat = createExplicitChat;
 const cxn_catalog_cjs_1 = require("./cxn-catalog.cjs");
 const node_fs_1 = require("node:fs");
@@ -60,6 +61,34 @@ function createExplicitJournal(file) {
             else
                 all.splice(i, 0, entry);
         } return all; } };
+}
+/** Accept formatting metadata only when it is provably the same plain text. */
+function isPlainRichText(value, prompt) {
+    if (value === undefined || value === null || value === '')
+        return true;
+    if (typeof value !== 'string')
+        return false;
+    try {
+        const doc = JSON.parse(value);
+        if (!doc || doc.type !== 'doc' || !Array.isArray(doc.content) || Object.keys(doc).some(k => k !== 'type' && k !== 'content'))
+            return false;
+        const paragraphs = [];
+        for (const node of doc.content) {
+            if (!node || node.type !== 'paragraph' || Object.keys(node).some(k => k !== 'type' && k !== 'content') || !(node.content === undefined || Array.isArray(node.content)))
+                return false;
+            let line = '';
+            for (const leaf of node.content ?? []) {
+                if (!leaf || leaf.type !== 'text' || typeof leaf.text !== 'string' || Object.keys(leaf).some(k => k !== 'type' && k !== 'text'))
+                    return false;
+                line += leaf.text;
+            }
+            paragraphs.push(line);
+        }
+        return paragraphs.join('\n') === prompt;
+    }
+    catch {
+        return false;
+    }
 }
 function createExplicitChat(options) {
     const snapshots = new Map(), busy = new Set();
@@ -151,7 +180,7 @@ function createExplicitChat(options) {
             snapshots.delete(k);
             return;
         }
-        if (args.attachmentPaths?.length || args.richText || args.replyToId) {
+        if (args.attachmentPaths?.length || !isPlainRichText(args.richText, args.prompt) || args.replyToId || args.replySessionId || args.replyQuote || args.fileReference) {
             options.journal.update(t, c => { c.operations[args.clientNonce] = 'native'; });
             notice(t, args.clientNonce, 'Native route: attachments, formatted content, and replies are unsupported in router text mode; local-only turns may be absent from native context.');
             snapshots.delete(k);

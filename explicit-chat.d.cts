@@ -24,6 +24,8 @@ export declare function createExplicitJournal(file: string): {
     update(t: Target, fn: (c: Saved) => void): void;
     merge(t: Target, rows: readonly Row[]): Row[];
 };
+/** Accept formatting metadata only when it is provably the same plain text. */
+export declare function isPlainRichText(value: unknown, prompt: string): boolean;
 export declare function createExplicitChat(options: {
     journal: ReturnType<typeof createExplicitJournal>;
     ready: (t: Target) => boolean;
@@ -45,6 +47,9 @@ export declare function createExplicitChat(options: {
         attachmentPaths?: readonly string[];
         richText?: unknown;
         replyToId?: unknown;
+        replySessionId?: unknown;
+        replyQuote?: unknown;
+        fileReference?: unknown;
     }, signal?: AbortSignal) => Promise<{
         accepted: true;
     } | undefined>;
